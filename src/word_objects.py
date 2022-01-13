@@ -1,6 +1,7 @@
 from typing import *
 from string import ascii_lowercase
 from copy import deepcopy
+from collections import defaultdict
 
 
 def all_character_set():
@@ -28,7 +29,7 @@ class DictionaryNode:
         self._parent = parent
         self._parent_path = parent_path
         self.is_word = is_word
-        self._child_map = {}
+        self._child_map = defaultdict()
 
     @property
     def is_root(self) -> bool:
@@ -117,6 +118,19 @@ class DictionaryNode:
             return self[path[0]].has_child(path[1:])
         return False
 
+    def get_child(self, path: str) -> Optional['DictionaryNode']:
+        """
+        Finds and returns the child specified by the path, if it exists
+
+        :param path: The path to the child to look for
+        :return: the child at the path, or None if it does not exist
+        """
+        if len(path) == 0:
+            return self
+        if self.has_child(path[0]):
+            return self.children[path[0]].get_child(path[1:])
+        return None
+
     def get_possible_children(self, space: 'BlankSpace') -> Iterator['DictionaryNode']:
         """
         Finds all possible children that could be specified by the given BlankSpace
@@ -144,7 +158,7 @@ class DictionaryNode:
 
     def __getitem__(self, item: str) -> Optional['DictionaryNode']:
         if len(item) == 1:
-            return self.children.get(item, default=None)
+            return self.children.get(item)
         if self.has_child(item[0]):
             return self.children[item[0]][item[1:]]
         return None
