@@ -24,7 +24,7 @@ class DictionaryNode:
     def __init__(self, parent: Optional['DictionaryNode'] = None, parent_path: Optional[str] = None,
                  is_word: bool = False):
         assert parent_path is None or len(parent_path) == 1
-        assert parent is None == parent_path is None
+        assert (parent is None) == (parent_path is None)
         self._parent = parent
         self._parent_path = parent_path
         self.is_word = is_word
@@ -176,7 +176,7 @@ class BlankSpace:
     """
     def __init__(self, bracketed: bool, negated: bool = False, min_blanks: int = 1, max_blanks: int = 1,
                  chars: Union[str, Collection[str]] = ''):
-        self.possible_characters = all_character_set() if negated else set()
+        self.possible_characters = all_character_set() if (not bracketed and chars == '') or negated else set()
         self.min_blanks = min_blanks
         self.max_blanks = max_blanks
         self._negated = negated
@@ -303,14 +303,14 @@ class BlankSpace:
         if self.negated:
             char_str = f'^{"".join(all_character_set() - self.possible_characters)}'
         elif not self.is_all_chars:
-            char_str = ''.join(self.possible_characters)
+            char_str = ''.join(sorted(self.possible_characters))
         else:
             char_str = ascii_lowercase
         if self.min_blanks == self.max_blanks == 1:
             return f'[{char_str}]'
         min_str = '' if self.min_blanks == 0 else str(self.min_blanks)
         max_str = '' if self.max_blanks == -1 else str(self.max_blanks)
-        return f'[{min_str},{max_str}{char_str}]'
+        return f'[{min_str},{max_str}{"" if char_str == ascii_lowercase else char_str}]'
 
 
 class UnknownWord:

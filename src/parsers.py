@@ -63,7 +63,7 @@ def parse_blank_space(string: str) -> Optional[BlankSpace]:
                 maxlen = -1
         else:  # No max and no characters
             maxlen = -1
-    if minlen > maxlen:
+    if -1 < maxlen < minlen:
         _raise_parse_error('BlankSpace', string, f'Lower bound ({minlen}) cannot be more than upper bound ({maxlen})',
                            index + 1)
 
@@ -81,6 +81,7 @@ def parse_blank_space(string: str) -> Optional[BlankSpace]:
                     index += 1
                     if index == len(unknown):
                         return res
+                    c = unknown[index]
             _raise_parse_error('BlankSpace', string, f'Unexpected character: {c}', index + 1)
         else:  # ^ ends the brackets
             return BlankSpace(True, negated, minlen, maxlen)
