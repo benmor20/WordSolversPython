@@ -402,8 +402,16 @@ class UnknownWord:
 
         :return: Whether this word is possible
         """
+        if not self.has_filter:
+            return True
         calc_min, calc_max = self._calc_length_bounds
-        return not self.has_filter or self.filter.min_blanks <= calc_min <= self.filter.max_blanks\
+        if self.filter.max_blanks == -1:
+            if calc_max == -1:
+                return True
+            return calc_max >= self.filter.min_blanks
+        elif calc_max == -1:
+            return calc_min <= self.filter.max_blanks
+        return self.filter.min_blanks <= calc_min <= self.filter.max_blanks\
                or self.filter.min_blanks <= calc_max <= self.filter.max_blanks
 
     def get_effective_spaces(self) -> List[BlankSpace]:
@@ -454,6 +462,38 @@ class UnknownWord:
             return UnknownWord(skip_first, filter_minus_one, self.hard_filter)
         else:
             return UnknownWord([first.clone_minus()] + skip_first, filter_minus_one, self.hard_filter)
+
+    def possible_words(self, word_trie: DictionaryNode) -> List[str]:
+        """
+        Finds all words within the given trie that this UnknownWord can represent
+
+        :param word_trie: the trie to search
+        :return: a List of all the words this can represent
+        """
+        res = []
+        seen = set()
+        if not self.is_possible:  # Ensure bounds are kept
+            return res
+
+        cut_first = self.without_first_letter()
+        if cut_first is None:  # no more letters
+            if word_trie.is_word:
+                res.append(str(word_trie))
+            return res
+
+        # If here, at least 1 letter left. Get possible characters and recurse
+        first_space = self.get_effective_space(0)
+        if first_space.min_blanks == 0:
+            nxt = self.without_space(0).possible_words(word_trie)
+            res.extend(nxt)
+            seen.update(nxt)
+        if first_space.max_blanks != 0:
+            for c in sorted(first_space.possible_characters):
+                if word_trie.has_child(c):
+                    nxt = cut_first.possible_words(word_trie.get_child(c))
+                    res.extend(filter(lambda w: w not in seen, nxt))
+                    seen.update(nxt)
+        return res
 
     def __getitem__(self, item):
         return self.spaces[item]
